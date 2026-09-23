@@ -143,7 +143,7 @@ impl std::fmt::Debug for BlockVersion {
 ///  - `known_block_versions`
 ///    The newest version number of the block that we've already seen and was created by the given client.
 ///    Also, for each client, this remembers the newest version we've seen from them. We won't accept any
-//     version numbers older than this from those clients.
+///     version numbers older than this from those clients.
 ///  - `last_update_client_id
 ///    The client_id we consider to have created the current version of the block.
 ///
