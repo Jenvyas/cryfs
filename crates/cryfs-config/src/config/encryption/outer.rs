@@ -1,5 +1,6 @@
 use anyhow::{Context, Result, ensure};
 use binrw::{BinRead, BinWrite, NullString, binrw, helpers::until_eof};
+use cryfs_blockstore::BlockId;
 use std::io::{Cursor, Read, Seek, Write};
 
 use cryfs_crypto::{
@@ -69,7 +70,7 @@ impl OuterConfig {
         let cipher = OuterCipher::new(outer_encryption_key)
             .context("Trying to initialize OuterCipher instance")?;
         let encrypted_inner_config = cipher
-            .encrypt(serialized_inner_config)
+            .encrypt(serialized_inner_config, BlockId::zero())
             .context("Trying to Cipher::encrypt OuterConfig")?;
         Ok(Self {
             kdf_parameters_serialized: kdf_parameters.serialize(),
@@ -81,7 +82,7 @@ impl OuterConfig {
         let cipher = OuterCipher::new(outer_encryption_key)
             .context("Trying to initialize OuterCipher instance")?;
         let plaintext = cipher
-            .decrypt(self.encrypted_inner_config.into())
+            .decrypt(self.encrypted_inner_config.into(), BlockId::zero())
             .context("Trying to Cipher::decrypt OuterConfig")?;
         let plaintext =
             remove_padding(plaintext).context("Trying to remove padding from OuterConfig")?;

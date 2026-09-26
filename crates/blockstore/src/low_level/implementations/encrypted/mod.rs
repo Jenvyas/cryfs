@@ -90,7 +90,7 @@ impl<
             )?;
         match loaded {
             None => Ok(None),
-            Some(data) => Ok(Some(self._decrypt(data).await?)),
+            Some(data) => Ok(Some(self._decrypt(data, id.clone()).await?)),
         }
     }
 
@@ -172,7 +172,7 @@ impl<
         id: &BlockId,
         data: Self::BlockData,
     ) -> Result<TryCreateResult> {
-        let ciphertext = self._encrypt(data.extract()).await?;
+        let ciphertext = self._encrypt(data.extract(), id.clone()).await?;
         self.underlying_block_store
             .deref()
             .borrow()
@@ -181,7 +181,7 @@ impl<
     }
 
     async fn store_optimized(&self, id: &BlockId, data: Self::BlockData) -> Result<()> {
-        let ciphertext = self._encrypt(data.extract()).await?;
+        let ciphertext = self._encrypt(data.extract(), id.clone()).await?;
         self.underlying_block_store
             .deref()
             .borrow()
@@ -233,22 +233,22 @@ impl<
     B: 'static + Debug + AsyncDrop<Error = anyhow::Error> + Borrow<_B> + Send + Sync,
 > EncryptedBlockStore<C, _B, B>
 {
-    async fn _encrypt(&self, plaintext: Data) -> Result<Data> {
+    async fn _encrypt(&self, plaintext: Data, id: BlockId) -> Result<Data> {
         let cipher = Arc::clone(&self.cipher);
         self.threadpool
             .execute_job(move || {
-                let ciphertext = cipher.encrypt(plaintext)?;
+                let ciphertext = cipher.encrypt(plaintext, id)?;
                 Ok(_prepend_header(ciphertext))
             })
             .await
     }
 
-    async fn _decrypt(&self, ciphertext: Data) -> Result<Data> {
+    async fn _decrypt(&self, ciphertext: Data, id: BlockId) -> Result<Data> {
         let cipher = Arc::clone(&self.cipher);
         self.threadpool
             .execute_job(move || {
                 let ciphertext = _check_and_remove_header(ciphertext)?;
-                cipher.decrypt(ciphertext)
+                cipher.decrypt(ciphertext, id)
             })
             .await
     }

@@ -98,6 +98,7 @@ pub fn cipher_is_supported(cipher_name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cryfs_blockstore::BlockId;
     use cryfs_utils::data::Data;
     // TODO Separate InfallibleUnwrap from lockable crate and remove lockable crate from our dependencies
     use lockable::InfallibleUnwrap;
@@ -160,15 +161,22 @@ mod tests {
             let plaintext: Data = allocate_space_for_ciphertext::<ExpectedCipher>(&hex::decode("0ffc9a43e15ccfbef1b0880167df335677c9005948eeadb31f89b06b90a364ad03c6b0859652dca960f8fa60c75747c4f0a67f50f5b85b800468559ea1a816173c0abaf5df8f02978a54b250bc57c7c6a55d4d245014722c0b1764718a6d5ca654976370").unwrap());
             let expected_cipher = ExpectedCipher::new(key(ExpectedCipher::KEY_SIZE, 1)).unwrap();
             let actual_cipher = ActualCipher::new(key(ActualCipher::KEY_SIZE, 1)).unwrap();
-            let encrypted_with_expected = expected_cipher.encrypt(plaintext.clone()).unwrap();
-            let encrypted_with_actual = actual_cipher.encrypt(plaintext.clone()).unwrap();
+            let block_id = BlockId::new_random();
+            let encrypted_with_expected = expected_cipher
+                .encrypt(plaintext.clone(), block_id)
+                .unwrap();
+            let encrypted_with_actual = actual_cipher.encrypt(plaintext.clone(), block_id).unwrap();
             assert_eq!(
                 plaintext.clone(),
-                actual_cipher.decrypt(encrypted_with_expected).unwrap()
+                actual_cipher
+                    .decrypt(encrypted_with_expected, block_id)
+                    .unwrap()
             );
             assert_eq!(
                 plaintext.clone(),
-                expected_cipher.decrypt(encrypted_with_actual).unwrap()
+                expected_cipher
+                    .decrypt(encrypted_with_actual, block_id)
+                    .unwrap()
             );
         }
     }

@@ -1,5 +1,6 @@
 use anyhow::{Context, Result, ensure};
 use binrw::{BinRead, BinWrite, NullString, binrw, helpers::until_eof};
+use cryfs_blockstore::BlockId;
 use std::io::{Cursor, Read, Seek, Write};
 
 use cryfs_crypto::symmetric::EncryptionKey;
@@ -65,7 +66,7 @@ impl InnerConfig {
             .context("Trying to add padding to InnerConfig")?;
 
         let encrypted_config = cipher
-            .encrypt(plaintext)
+            .encrypt(plaintext, BlockId::zero())
             .context("Trying to Cipher::encrypt InnerConfig")?;
 
         Ok(Self {
@@ -81,7 +82,7 @@ impl InnerConfig {
             .with_context(|| format!("Trying to look up cipher {}", self.cipher_name))?;
 
         let plaintext = cipher
-            .decrypt(self.encrypted_config.into())
+            .decrypt(self.encrypted_config.into(), BlockId::zero())
             .context("Trying to Cipher::decrypt InnerConfig")?;
         let plaintext =
             remove_padding(plaintext).context("Trying to remove padding from InnerConfig")?;

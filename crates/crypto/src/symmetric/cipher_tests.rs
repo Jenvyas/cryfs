@@ -2,6 +2,7 @@
 
 use rand::{Rng, SeedableRng, rngs::StdRng};
 // TODO Separate out infallible from lockable and don't depend on lockable from this crate
+use cryfs_utils::block_id::BlockId;
 use generic_array::typenum::{U12, U16};
 use lockable::InfallibleUnwrap;
 
@@ -45,8 +46,12 @@ mod enc_dec {
         let enc_cipher = Enc::new(key(Enc::KEY_SIZE, 1)).unwrap();
         let dec_cipher = Dec::new(key(Dec::KEY_SIZE, 1)).unwrap();
         let plaintext = allocate_space_for_ciphertext::<Enc>(&[]);
-        let ciphertext = enc_cipher.encrypt(plaintext.clone().into()).unwrap();
-        let decrypted_plaintext = dec_cipher.decrypt(ciphertext.into()).unwrap();
+        let ciphertext = enc_cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
+        let decrypted_plaintext = dec_cipher
+            .decrypt(ciphertext.into(), BlockId::zero())
+            .unwrap();
         assert_eq!(plaintext.as_ref(), decrypted_plaintext.as_ref());
     }
 
@@ -55,8 +60,12 @@ mod enc_dec {
         let enc_cipher = Enc::new(key(Enc::KEY_SIZE, 1)).unwrap();
         let dec_cipher = Dec::new(key(Dec::KEY_SIZE, 1)).unwrap();
         let plaintext = allocate_space_for_ciphertext::<Enc>(&hex::decode("0ffc9a43e15ccfbef1b0880167df335677c9005948eeadb31f89b06b90a364ad03c6b0859652dca960f8fa60c75747c4f0a67f50f5b85b800468559ea1a816173c0abaf5df8f02978a54b250bc57c7c6a55d4d245014722c0b1764718a6d5ca654976370").unwrap());
-        let ciphertext = enc_cipher.encrypt(plaintext.clone().into()).unwrap();
-        let decrypted_plaintext = dec_cipher.decrypt(ciphertext.into()).unwrap();
+        let ciphertext = enc_cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
+        let decrypted_plaintext = dec_cipher
+            .decrypt(ciphertext.into(), BlockId::zero())
+            .unwrap();
         assert_eq!(plaintext.as_ref(), decrypted_plaintext.as_ref());
     }
 
@@ -65,9 +74,11 @@ mod enc_dec {
         let enc_cipher = Enc::new(key(Enc::KEY_SIZE, 1)).unwrap();
         let dec_cipher = Dec::new(key(Dec::KEY_SIZE, 1)).unwrap();
         let plaintext = allocate_space_for_ciphertext::<Enc>(&hex::decode("0ffc9a43e15ccfbef1b0880167df335677c9005948eeadb31f89b06b90a364ad03c6b0859652dca960f8fa60c75747c4f0a67f50f5b85b800468559ea1a816173c0abaf5df8f02978a54b250bc57c7c6a55d4d245014722c0b1764718a6d5ca654976370").unwrap());
-        let mut ciphertext = enc_cipher.encrypt(plaintext.clone().into()).unwrap();
+        let mut ciphertext = enc_cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
         ciphertext[20] ^= 1;
-        let decrypted_plaintext = dec_cipher.decrypt(ciphertext.into());
+        let decrypted_plaintext = dec_cipher.decrypt(ciphertext.into(), BlockId::zero());
         assert!(decrypted_plaintext.is_err());
     }
 
@@ -76,9 +87,11 @@ mod enc_dec {
         let enc_cipher = Enc::new(key(Enc::KEY_SIZE, 1)).unwrap();
         let dec_cipher = Dec::new(key(Dec::KEY_SIZE, 1)).unwrap();
         let plaintext = allocate_space_for_ciphertext::<Enc>(&hex::decode("0ffc9a43e15ccfbef1b0880167df335677c9005948eeadb31f89b06b90a364ad03c6b0859652dca960f8fa60c75747c4f0a67f50f5b85b800468559ea1a816173c0abaf5df8f02978a54b250bc57c7c6a55d4d245014722c0b1764718a6d5ca654976370").unwrap());
-        let ciphertext = enc_cipher.encrypt(plaintext.clone().into()).unwrap();
+        let ciphertext = enc_cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
         let ciphertext = &ciphertext[..(ciphertext.len() - 1)];
-        let decrypted_plaintext = dec_cipher.decrypt(ciphertext.to_vec().into());
+        let decrypted_plaintext = dec_cipher.decrypt(ciphertext.to_vec().into(), BlockId::zero());
         assert!(decrypted_plaintext.is_err());
     }
 
@@ -87,8 +100,10 @@ mod enc_dec {
         let enc_cipher = Enc::new(key(Enc::KEY_SIZE, 1)).unwrap();
         let dec_cipher = Dec::new(key(Dec::KEY_SIZE, 2)).unwrap();
         let plaintext = allocate_space_for_ciphertext::<Enc>(&hex::decode("0ffc9a43e15ccfbef1b0880167df335677c9005948eeadb31f89b06b90a364ad03c6b0859652dca960f8fa60c75747c4f0a67f50f5b85b800468559ea1a816173c0abaf5df8f02978a54b250bc57c7c6a55d4d245014722c0b1764718a6d5ca654976370").unwrap());
-        let ciphertext = enc_cipher.encrypt(plaintext.clone().into()).unwrap();
-        let decrypted_plaintext = dec_cipher.decrypt(ciphertext.into());
+        let ciphertext = enc_cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
+        let decrypted_plaintext = dec_cipher.decrypt(ciphertext.into(), BlockId::zero());
         assert!(decrypted_plaintext.is_err());
     }
 
@@ -218,7 +233,9 @@ mod basics {
     fn given_emptydata_then_sizecalculationsarecorrect<C: CipherDef>() {
         let cipher = C::new(key(C::KEY_SIZE, 1)).unwrap();
         let plaintext = allocate_space_for_ciphertext::<C>(&[]);
-        let ciphertext = cipher.encrypt(plaintext.clone().into()).unwrap();
+        let ciphertext = cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
         assert_eq!(
             plaintext.len(),
             ciphertext.len() - C::CIPHERTEXT_OVERHEAD_PREFIX - C::CIPHERTEXT_OVERHEAD_SUFFIX
@@ -233,7 +250,9 @@ mod basics {
     fn given_somedata_then_sizecalculationsarecorrect<C: CipherDef>() {
         let cipher = C::new(key(C::KEY_SIZE, 1)).unwrap();
         let plaintext = allocate_space_for_ciphertext::<C>(&hex::decode("0ffc9a43e15ccfbef1b0880167df335677c9005948eeadb31f89b06b90a364ad03c6b0859652dca960f8fa60c75747c4f0a67f50f5b85b800468559ea1a816173c0abaf5df8f02978a54b250bc57c7c6a55d4d245014722c0b1764718a6d5ca654976370").unwrap());
-        let ciphertext = cipher.encrypt(plaintext.clone().into()).unwrap();
+        let ciphertext = cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
         assert_eq!(
             plaintext.len(),
             ciphertext.len() - C::CIPHERTEXT_OVERHEAD_PREFIX - C::CIPHERTEXT_OVERHEAD_SUFFIX
@@ -248,7 +267,7 @@ mod basics {
     fn given_zerosizeciphertext_then_doesntdecrypt<C: CipherDef>() {
         let cipher = C::new(key(C::KEY_SIZE, 1)).unwrap();
         let ciphertext = vec![];
-        let decrypted_plaintext = cipher.decrypt(ciphertext.into());
+        let decrypted_plaintext = cipher.decrypt(ciphertext.into(), BlockId::zero());
         assert!(decrypted_plaintext.is_err());
     }
 
@@ -256,7 +275,7 @@ mod basics {
     fn given_toosmallciphertext_then_doesntdecrypt<C: CipherDef>() {
         let cipher = C::new(key(C::KEY_SIZE, 1)).unwrap();
         let ciphertext = vec![0xab, 0xcd];
-        let decrypted_plaintext = cipher.decrypt(ciphertext.into());
+        let decrypted_plaintext = cipher.decrypt(ciphertext.into(), BlockId::zero());
         assert!(decrypted_plaintext.is_err());
     }
 
@@ -264,8 +283,12 @@ mod basics {
     fn test_encryption_is_indeterministic<C: CipherDef>() {
         let cipher = C::new(key(C::KEY_SIZE, 1)).unwrap();
         let plaintext = allocate_space_for_ciphertext::<C>(&hex::decode("0ffc9a43e15ccfbef1b0880167df335677c9005948eeadb31f89b06b90a364ad03c6b0859652dca960f8fa60c75747c4f0a67f50f5b85b800468559ea1a816173c0abaf5df8f02978a54b250bc57c7c6a55d4d245014722c0b1764718a6d5ca654976370").unwrap());
-        let ciphertext1 = cipher.encrypt(plaintext.clone().into()).unwrap();
-        let ciphertext2 = cipher.encrypt(plaintext.clone().into()).unwrap();
+        let ciphertext1 = cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
+        let ciphertext2 = cipher
+            .encrypt(plaintext.clone().into(), BlockId::zero())
+            .unwrap();
         assert_ne!(ciphertext1, ciphertext2);
     }
 
@@ -346,7 +369,10 @@ macro_rules! backward_compatibility_test {
             let ciphertext = hex::decode($ciphertext).unwrap();
             assert_eq!(
                 b"Hello World",
-                &cipher.decrypt(ciphertext.into()).unwrap().as_ref()
+                &cipher
+                    .decrypt(ciphertext.into(), BlockId::zero())
+                    .unwrap()
+                    .as_ref()
             );
         }
     };

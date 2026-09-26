@@ -11,7 +11,7 @@ use std::hint::black_box;
 use lockable::InfallibleUnwrap;
 
 use cryfs_crypto::symmetric::{self, Cipher, CipherDef, EncryptionKey, LibsodiumAes256GcmNonce12};
-use cryfs_utils::data::Data;
+use cryfs_utils::{block_id::BlockId, data::Data};
 
 type Aes256Gcm = symmetric::Aes256Gcm;
 type AeadAes256Gcm = symmetric::AeadAes256Gcm;
@@ -47,7 +47,7 @@ fn make_plaintext<C: CipherDef>(_c: &C, size: usize) -> Data {
 
 fn make_ciphertext(cipher: &impl CipherDef, size: usize) -> Data {
     let plaintext = make_plaintext(cipher, size);
-    cipher.encrypt(plaintext).unwrap()
+    cipher.encrypt(plaintext, BlockId::zero()).unwrap()
 }
 
 fn bench_encrypt(c: &mut Criterion) {
@@ -60,7 +60,7 @@ fn bench_encrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = Aes256Gcm::new(make_key(Aes256Gcm::KEY_SIZE)).unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
         if LibsodiumAes256GcmNonce12::is_available() {
@@ -73,7 +73,9 @@ fn bench_encrypt(c: &mut Criterion) {
                     ))
                     .unwrap();
                     let plaintext = make_plaintext(&cipher, size);
-                    b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                    b.iter(|| {
+                        black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap())
+                    });
                 },
             );
         }
@@ -83,7 +85,7 @@ fn bench_encrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = AeadAes256Gcm::new(make_key(AeadAes256Gcm::KEY_SIZE)).unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -92,7 +94,7 @@ fn bench_encrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = OpensslAes256Gcm::new(make_key(OpensslAes256Gcm::KEY_SIZE)).unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -101,7 +103,7 @@ fn bench_encrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = Aes128Gcm::new(make_key(Aes128Gcm::KEY_SIZE)).unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -110,7 +112,7 @@ fn bench_encrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = AeadAes128Gcm::new(make_key(AeadAes128Gcm::KEY_SIZE)).unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -119,7 +121,7 @@ fn bench_encrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = OpensslAes128Gcm::new(make_key(OpensslAes128Gcm::KEY_SIZE)).unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -128,7 +130,7 @@ fn bench_encrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = XChaCha20Poly1305::new(make_key(XChaCha20Poly1305::KEY_SIZE)).unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -138,7 +140,7 @@ fn bench_encrypt(c: &mut Criterion) {
                 let cipher =
                     AeadXChaCha20Poly1305::new(make_key(AeadXChaCha20Poly1305::KEY_SIZE)).unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -149,7 +151,7 @@ fn bench_encrypt(c: &mut Criterion) {
                     LibsodiumXChaCha20Poly1305::new(make_key(LibsodiumXChaCha20Poly1305::KEY_SIZE))
                         .unwrap();
                 let plaintext = make_plaintext(&cipher, size);
-                b.iter(|| black_box(cipher.encrypt(plaintext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.encrypt(plaintext.clone(), BlockId::zero()).unwrap()));
             },
         );
     }
@@ -165,7 +167,7 @@ fn bench_decrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = Aes256Gcm::new(make_key(Aes256Gcm::KEY_SIZE)).unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
         if LibsodiumAes256GcmNonce12::is_available() {
@@ -178,7 +180,9 @@ fn bench_decrypt(c: &mut Criterion) {
                     ))
                     .unwrap();
                     let ciphertext = make_ciphertext(&cipher, size);
-                    b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                    b.iter(|| {
+                        black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap())
+                    });
                 },
             );
         }
@@ -188,7 +192,7 @@ fn bench_decrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = AeadAes256Gcm::new(make_key(AeadAes256Gcm::KEY_SIZE)).unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -197,7 +201,7 @@ fn bench_decrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = OpensslAes256Gcm::new(make_key(OpensslAes256Gcm::KEY_SIZE)).unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -206,7 +210,7 @@ fn bench_decrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = Aes128Gcm::new(make_key(Aes128Gcm::KEY_SIZE)).unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -215,7 +219,7 @@ fn bench_decrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = AeadAes128Gcm::new(make_key(AeadAes128Gcm::KEY_SIZE)).unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -224,7 +228,7 @@ fn bench_decrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = OpensslAes128Gcm::new(make_key(OpensslAes128Gcm::KEY_SIZE)).unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -233,7 +237,7 @@ fn bench_decrypt(c: &mut Criterion) {
             |b, &size| {
                 let cipher = XChaCha20Poly1305::new(make_key(XChaCha20Poly1305::KEY_SIZE)).unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -243,7 +247,7 @@ fn bench_decrypt(c: &mut Criterion) {
                 let cipher =
                     AeadXChaCha20Poly1305::new(make_key(AeadXChaCha20Poly1305::KEY_SIZE)).unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
         group.bench_with_input(
@@ -254,7 +258,7 @@ fn bench_decrypt(c: &mut Criterion) {
                     LibsodiumXChaCha20Poly1305::new(make_key(LibsodiumXChaCha20Poly1305::KEY_SIZE))
                         .unwrap();
                 let ciphertext = make_ciphertext(&cipher, size);
-                b.iter(|| black_box(cipher.decrypt(ciphertext.clone()).unwrap()));
+                b.iter(|| black_box(cipher.decrypt(ciphertext.clone(), BlockId::zero()).unwrap()));
             },
         );
     }

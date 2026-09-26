@@ -11,7 +11,7 @@ use std::sync::Once;
 use super::super::{Cipher, CipherDef, EncryptionKey};
 use crate::symmetric::InvalidKeySizeError;
 
-use cryfs_utils::data::Data;
+use cryfs_utils::{block_id::BlockId, data::Data};
 
 static INIT_LIBSODIUM: Once = Once::new();
 
@@ -67,7 +67,7 @@ impl Cipher for Aes256Gcm {
         Self::CIPHERTEXT_OVERHEAD_SUFFIX
     }
 
-    fn encrypt(&self, plaintext: Data) -> Result<Data> {
+    fn encrypt(&self, plaintext: Data, _id: BlockId) -> Result<Data> {
         _encrypt::<
             { Self::CIPHERTEXT_OVERHEAD_PREFIX },
             { Self::CIPHERTEXT_OVERHEAD_SUFFIX },
@@ -85,7 +85,7 @@ impl Cipher for Aes256Gcm {
         )
     }
 
-    fn decrypt(&self, ciphertext: Data) -> Result<Data> {
+    fn decrypt(&self, ciphertext: Data, _id: BlockId) -> Result<Data> {
         _decrypt::<
             { Self::CIPHERTEXT_OVERHEAD_PREFIX },
             { Self::CIPHERTEXT_OVERHEAD_SUFFIX },
@@ -137,7 +137,7 @@ impl Cipher for XChaCha20Poly1305 {
         Self::CIPHERTEXT_OVERHEAD_SUFFIX
     }
 
-    fn encrypt(&self, plaintext: Data) -> Result<Data> {
+    fn encrypt(&self, plaintext: Data, _id: BlockId) -> Result<Data> {
         _encrypt::<
             { Self::CIPHERTEXT_OVERHEAD_PREFIX },
             { Self::CIPHERTEXT_OVERHEAD_SUFFIX },
@@ -155,7 +155,7 @@ impl Cipher for XChaCha20Poly1305 {
         )
     }
 
-    fn decrypt(&self, ciphertext: Data) -> Result<Data> {
+    fn decrypt(&self, ciphertext: Data, _id: BlockId) -> Result<Data> {
         _decrypt::<
             { Self::CIPHERTEXT_OVERHEAD_PREFIX },
             { Self::CIPHERTEXT_OVERHEAD_SUFFIX },

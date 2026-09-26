@@ -15,7 +15,7 @@ use std::marker::PhantomData;
 
 use super::super::{Cipher, CipherDef, EncryptionKey, InvalidKeySizeError};
 
-use cryfs_utils::data::Data;
+use cryfs_utils::{block_id::BlockId, data::Data};
 
 /// Trait defining the properties of an OpenSSL cipher type.
 ///
@@ -116,7 +116,7 @@ impl<C: CipherType> Cipher for AeadCipher<C> {
         Self::CIPHERTEXT_OVERHEAD_SUFFIX
     }
 
-    fn encrypt(&self, plaintext: Data) -> Result<Data> {
+    fn encrypt(&self, plaintext: Data, _id: BlockId) -> Result<Data> {
         // TODO Use binary-layout here?
         let ciphertext_size =
             plaintext.len() + Self::CIPHERTEXT_OVERHEAD_PREFIX + Self::CIPHERTEXT_OVERHEAD_SUFFIX;
@@ -147,7 +147,7 @@ impl<C: CipherType> Cipher for AeadCipher<C> {
         Ok(ciphertext)
     }
 
-    fn decrypt(&self, mut ciphertext: Data) -> Result<Data> {
+    fn decrypt(&self, mut ciphertext: Data, _id: BlockId) -> Result<Data> {
         ensure!(
             ciphertext.len() >= Self::CIPHERTEXT_OVERHEAD_PREFIX + Self::CIPHERTEXT_OVERHEAD_SUFFIX,
             "Ciphertext is only {} bytes. That's too small to be decrypted, doesn't even have enough space for IV and Tag",

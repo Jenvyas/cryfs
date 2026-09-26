@@ -32,7 +32,7 @@
 //!
 //! ```
 //! use cryfs_crypto::symmetric::{Aes256Gcm, Cipher, CipherDef, EncryptionKey, DefaultNonceSize};
-//! use cryfs_utils::data::Data;
+//! use cryfs_utils::{data::Data, block_id::BlockId};
 //!
 //! // Generate a random encryption key
 //! let key = EncryptionKey::generate_random::<{Aes256Gcm::<DefaultNonceSize>::KEY_SIZE}>();
@@ -50,8 +50,8 @@
 //! plaintext.as_mut().copy_from_slice(message);
 //!
 //! // Encrypt and decrypt
-//! let ciphertext = cipher.encrypt(plaintext).expect("encryption succeeded");
-//! let decrypted = cipher.decrypt(ciphertext).expect("decryption succeeded");
+//! let ciphertext = cipher.encrypt(plaintext, BlockId::zero()).expect("encryption succeeded");
+//! let decrypted = cipher.decrypt(ciphertext, BlockId::zero()).expect("decryption succeeded");
 //! assert_eq!(decrypted.as_ref(), b"Secret message");
 //! ```
 
@@ -59,7 +59,7 @@ use anyhow::Result;
 use derive_more::{Display, Error};
 use static_assertions::const_assert;
 
-use cryfs_utils::data::Data;
+use cryfs_utils::{block_id::BlockId, data::Data};
 
 /// A symmetric encryption cipher.
 ///
@@ -87,9 +87,12 @@ pub trait Cipher {
     /// pre-allocated for the ciphertext overhead. Use `Data::allocate()` or
     /// `Data::grow_region()` to allocate this space.
     ///
+    /// The `id` parameter is used by ciphers that rely on a sector index for encryption (e.g. XTS-AES).
+    ///
     /// # Arguments
     ///
     /// * `data` - The plaintext to encrypt, with pre-allocated space for overhead
+    /// * `id` - The ID of the of the block the plaintext belongs to.
     ///
     /// # Returns
     ///
@@ -98,7 +101,7 @@ pub trait Cipher {
     /// # Errors
     ///
     /// Returns an error if encryption fails (rare, typically indicates system issues)
-    fn encrypt(&self, data: Data) -> Result<Data>;
+    fn encrypt(&self, data: Data, id: BlockId) -> Result<Data>;
 
     /// Decrypts the given ciphertext.
     ///
@@ -119,7 +122,7 @@ pub trait Cipher {
     /// - The ciphertext is too small (missing nonce or tag)
     /// - The authentication tag verification fails (tampering detected)
     /// - The key is incorrect
-    fn decrypt(&self, data: Data) -> Result<Data>;
+    fn decrypt(&self, data: Data, id: BlockId) -> Result<Data>;
 
     /// Returns the number of prefix bytes added to ciphertext (the nonce size).
     fn ciphertext_overhead_prefix(&self) -> usize;

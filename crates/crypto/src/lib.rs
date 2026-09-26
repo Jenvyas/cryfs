@@ -35,7 +35,7 @@
 //!
 //! ```
 //! use cryfs_crypto::symmetric::{Aes256Gcm, Cipher, CipherDef, EncryptionKey, DefaultNonceSize};
-//! use cryfs_utils::data::Data;
+//! use cryfs_utils::{data::Data, block_id::BlockId};
 //!
 //! // Generate a random encryption key
 //! let key = EncryptionKey::generate_random::<{Aes256Gcm::<DefaultNonceSize>::KEY_SIZE}>();
@@ -52,10 +52,10 @@
 //! );
 //! plaintext.as_mut().copy_from_slice(message);
 //!
-//! let ciphertext = cipher.encrypt(plaintext).expect("encryption succeeded");
+//! let ciphertext = cipher.encrypt(plaintext, BlockId::zero()).expect("encryption succeeded");
 //!
 //! // Decrypt the data
-//! let decrypted = cipher.decrypt(ciphertext).expect("decryption succeeded");
+//! let decrypted = cipher.decrypt(ciphertext, BlockId::zero()).expect("decryption succeeded");
 //! assert_eq!(decrypted.as_ref(), b"Hello, CryFS!");
 //! ```
 

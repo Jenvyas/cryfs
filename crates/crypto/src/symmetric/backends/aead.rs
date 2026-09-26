@@ -3,6 +3,7 @@
 use aead::generic_array::typenum::Unsigned;
 use aead::{AeadCore, AeadInPlace, KeyInit, Nonce};
 use anyhow::{Context, Result, ensure};
+use cryfs_utils::block_id::BlockId;
 use rand::{Rng, rng};
 use std::marker::PhantomData;
 
@@ -51,7 +52,7 @@ impl<C: KeyInit + AeadInPlace> Cipher for AeadCipher<C> {
         Self::CIPHERTEXT_OVERHEAD_SUFFIX
     }
 
-    fn encrypt(&self, mut plaintext: Data) -> Result<Data> {
+    fn encrypt(&self, mut plaintext: Data, _id: BlockId) -> Result<Data> {
         // TODO Move C::new_from_slice call to constructor so we don't have to do it every time?
         //      Is it actually expensive? Note that we have to somehow migrate the
         //      secret protection we get from our EncryptionKey class then.
@@ -76,7 +77,7 @@ impl<C: KeyInit + AeadInPlace> Cipher for AeadCipher<C> {
         Ok(ciphertext)
     }
 
-    fn decrypt(&self, mut ciphertext: Data) -> Result<Data> {
+    fn decrypt(&self, mut ciphertext: Data, _id: BlockId) -> Result<Data> {
         ensure!(
             ciphertext.len() >= Self::CIPHERTEXT_OVERHEAD_PREFIX + Self::CIPHERTEXT_OVERHEAD_SUFFIX,
             "Ciphertext is only {} bytes. That's too small to be decrypted, doesn't even have enough space for IV and Tag",
