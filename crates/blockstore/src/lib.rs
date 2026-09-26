@@ -5,9 +5,6 @@
 // TODO #![deny(missing_docs)]
 // TODO Forbid unsafe code?
 
-mod block_id;
-pub use block_id::{BLOCKID_LEN, BlockId};
-
 mod utils;
 pub use utils::{RemoveResult, TryCreateResult};
 
@@ -25,6 +22,8 @@ pub use low_level::{
 
 mod overhead;
 pub use overhead::{InvalidBlockSizeError, Overhead};
+
+pub use cryfs_utils::block_id::{BLOCKID_LEN, BlockId};
 
 #[cfg(any(test, feature = "testutils"))]
 pub use high_level::{

@@ -96,7 +96,7 @@ impl BinWrite for BlockId {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cryfs_utils::binary::{BinaryReadExt, BinaryWriteExt};
+    use crate::binary::{BinaryReadExt, BinaryWriteExt};
     use std::io::Cursor;
 
     #[test]
